@@ -2,7 +2,6 @@ import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 import crypto from "crypto";
 
@@ -10,10 +9,6 @@ export default defineConfig(async () => {
   const SERVER_SESSION_ID = crypto.randomUUID();
   return {
     plugins: [
-      tailwindcss({
-        // @ts-expect-error - 'transform' is a valid option to disable lightningcss, not yet in types
-        transform: false, // Disable lightningcss to avoid native module issues on Vercel
-      }),
       tanstackStart({
         importProtection: {
           behavior: "error",
