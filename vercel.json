@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": ".output",
-  "framework": "other",
+  "framework": "tanstack-start",
   "installCommand": "npm install"
 }
