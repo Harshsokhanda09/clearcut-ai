@@ -1,8 +1,6 @@
 const DB_NAME = "ClearCutAI";
 const DB_VERSION = 2;
 const IMAGE_STORE_NAME = "images";
-const CURRENT_STORE_NAME = "current";
-const CURRENT_RESULT_ID = "active";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -14,20 +12,6 @@ export interface DBEntry {
   originalFileType: string;
   originalFileSize: number;
   createdAt: string;
-}
-
-export interface CurrentResult {
-  id: typeof CURRENT_RESULT_ID;
-  originalBlob: Blob;
-  processedBlob?: Blob;
-  originalFileName: string;
-  originalFileType: string;
-  originalFileSize: number;
-  width?: number;
-  height?: number;
-  processingMs?: number;
-  savedAt: string;
-  status: "idle" | "completed";
 }
 
 let db: IDBDatabase | null = null;
@@ -56,9 +40,6 @@ async function openDB(): Promise<IDBDatabase> {
       const database = request.result;
       if (!database.objectStoreNames.contains(IMAGE_STORE_NAME)) {
         database.createObjectStore(IMAGE_STORE_NAME, { keyPath: "id" });
-      }
-      if (!database.objectStoreNames.contains(CURRENT_STORE_NAME)) {
-        database.createObjectStore(CURRENT_STORE_NAME, { keyPath: "id" });
       }
     };
   });
@@ -118,26 +99,4 @@ export async function deleteImage(id: string): Promise<void> {
 export async function clearAllImages(): Promise<void> {
   if (!isBrowser) return;
   await runRequest(IMAGE_STORE_NAME, "readwrite", (store) => store.clear());
-}
-
-export async function saveCurrentImage(result: Omit<CurrentResult, "id">): Promise<void> {
-  if (!isBrowser) return;
-  await runRequest(CURRENT_STORE_NAME, "readwrite", (store) =>
-    store.put({ ...result, id: CURRENT_RESULT_ID }),
-  );
-}
-
-export async function getCurrentImage(): Promise<CurrentResult | null> {
-  if (!isBrowser) return null;
-  const result = await runRequest<CurrentResult | undefined>(
-    CURRENT_STORE_NAME,
-    "readonly",
-    (store) => store.get(CURRENT_RESULT_ID),
-  );
-  return result ?? null;
-}
-
-export async function clearCurrentImage(): Promise<void> {
-  if (!isBrowser) return;
-  await runRequest(CURRENT_STORE_NAME, "readwrite", (store) => store.delete(CURRENT_RESULT_ID));
 }
