@@ -5,10 +5,10 @@ import { useState } from "react";
 
 const NAV = [
   { to: "/features", label: "Features" },
-  { to: "/history", label: "History" },
   { to: "/pricing", label: "Pricing" },
+  { to: "/api", label: "API" },
   { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
+  { to: "/history", label: "History" },
 ];
 
 export function SiteHeader() {
@@ -37,6 +37,20 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
+        <div className="hidden items-center gap-4 md:flex">
+          <Link to="/login" className="text-sm text-muted-foreground hover:text-foreground">
+            Login
+          </Link>
+          <Link to="/signup" className="text-sm text-muted-foreground hover:text-foreground">
+            Sign Up
+          </Link>
+          <Link
+            to="/remove-background"
+            className="inline-flex items-center rounded-xl bg-gradient-brand px-5 py-2 text-sm font-semibold text-primary-foreground shadow-glow"
+          >
+            Get Started Free
+          </Link>
+        </div>
         <button
           className="rounded-lg p-2 md:hidden"
           onClick={() => setOpen((v) => !v)}
@@ -63,6 +77,22 @@ export function SiteHeader() {
                 )}
               </Link>
             ))}
+            <div className="border-t border-border/60 my-2"></div>
+            <Link to="/login" onClick={() => setOpen(false)}>
+              <span className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent/10 hover:text-foreground">
+                Login
+              </span>
+            </Link>
+            <Link to="/signup" onClick={() => setOpen(false)}>
+              <span className="block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent/10 hover:text-foreground">
+                Sign Up
+              </span>
+            </Link>
+            <Link to="/remove-background" onClick={() => setOpen(false)}>
+              <span className="block rounded-md px-3 py-2 text-sm font-semibold text-primary-foreground bg-gradient-brand shadow-glow">
+                Get Started Free
+              </span>
+            </Link>
           </div>
         </div>
       )}

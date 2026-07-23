@@ -11,11 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as ApiRouteImport } from './routes/api'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as HistoryRouteImport } from './routes/history'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RemoveBackgroundRouteImport } from './routes/remove-background'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiRemoveBackgroundRouteImport } from './routes/api.remove-background'
 
@@ -27,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRoute = ApiRouteImport.update({
+  id: '/api',
+  path: '/api',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -44,6 +53,11 @@ const HistoryRoute = HistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
@@ -54,36 +68,54 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RemoveBackgroundRoute = RemoveBackgroundRouteImport.update({
+  id: '/remove-background',
+  path: '/remove-background',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRemoveBackgroundRoute = ApiRemoveBackgroundRouteImport.update({
-  id: '/api/remove-background',
-  path: '/api/remove-background',
-  getParentRoute: () => rootRouteImport,
+  id: '/remove-background',
+  path: '/remove-background',
+  getParentRoute: () => ApiRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/api': typeof ApiRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/remove-background': typeof RemoveBackgroundRoute
+  '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/api': typeof ApiRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/remove-background': typeof RemoveBackgroundRoute
+  '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
 }
@@ -91,11 +123,15 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/api': typeof ApiRouteWithChildren
   '/contact': typeof ContactRoute
   '/features': typeof FeaturesRoute
   '/history': typeof HistoryRoute
+  '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/remove-background': typeof RemoveBackgroundRoute
+  '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
 }
@@ -104,33 +140,45 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/api'
     | '/contact'
     | '/features'
     | '/history'
+    | '/login'
     | '/pricing'
     | '/privacy'
+    | '/remove-background'
+    | '/signup'
     | '/terms'
     | '/api/remove-background'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/api'
     | '/contact'
     | '/features'
     | '/history'
+    | '/login'
     | '/pricing'
     | '/privacy'
+    | '/remove-background'
+    | '/signup'
     | '/terms'
     | '/api/remove-background'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/api'
     | '/contact'
     | '/features'
     | '/history'
+    | '/login'
     | '/pricing'
     | '/privacy'
+    | '/remove-background'
+    | '/signup'
     | '/terms'
     | '/api/remove-background'
   fileRoutesById: FileRoutesById
@@ -138,13 +186,16 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  ApiRoute: typeof ApiRouteWithChildren
   ContactRoute: typeof ContactRoute
   FeaturesRoute: typeof FeaturesRoute
   HistoryRoute: typeof HistoryRoute
+  LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  RemoveBackgroundRoute: typeof RemoveBackgroundRoute
+  SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
-  ApiRemoveBackgroundRoute: typeof ApiRemoveBackgroundRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -161,6 +212,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api': {
+      id: '/api'
+      path: '/api'
+      fullPath: '/api'
+      preLoaderRoute: typeof ApiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -184,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
@@ -198,6 +263,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/remove-background': {
+      id: '/remove-background'
+      path: '/remove-background'
+      fullPath: '/remove-background'
+      preLoaderRoute: typeof RemoveBackgroundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms': {
       id: '/terms'
       path: '/terms'
@@ -207,24 +286,37 @@ declare module '@tanstack/react-router' {
     }
     '/api/remove-background': {
       id: '/api/remove-background'
-      path: '/api/remove-background'
+      path: '/remove-background'
       fullPath: '/api/remove-background'
       preLoaderRoute: typeof ApiRemoveBackgroundRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ApiRoute
     }
   }
 }
 
+interface ApiRouteChildren {
+  ApiRemoveBackgroundRoute: typeof ApiRemoveBackgroundRoute
+}
+
+const ApiRouteChildren: ApiRouteChildren = {
+  ApiRemoveBackgroundRoute: ApiRemoveBackgroundRoute,
+}
+
+const ApiRouteWithChildren = ApiRoute._addFileChildren(ApiRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  ApiRoute: ApiRouteWithChildren,
   ContactRoute: ContactRoute,
   FeaturesRoute: FeaturesRoute,
   HistoryRoute: HistoryRoute,
+  LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  RemoveBackgroundRoute: RemoveBackgroundRoute,
+  SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
-  ApiRemoveBackgroundRoute: ApiRemoveBackgroundRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

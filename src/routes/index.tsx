@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Sparkles, Zap, ShieldCheck, Wand2, ImageDown, Check } from "lucide-react";
+import { Sparkles, Zap, ShieldCheck, Wand2, Check } from "lucide-react";
 import { SiteLayout } from "@/components/site-layout";
-import { UploadWorkspace } from "@/components/upload-workspace";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ClearCut AI — Remove image backgrounds in one click" },
+      { title: "ClearCut AI — Remove backgrounds in seconds" },
       {
         name: "description",
         content:
@@ -26,24 +25,29 @@ function LandingPage() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/60 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
               <Sparkles className="h-3.5 w-3.5 text-brand-cyan" />
-              AI background removal · no editing skills required
+              AI-Powered Background Removal
             </div>
             <h1 className="mt-6 text-4xl font-bold leading-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              Remove image backgrounds in <span className="text-gradient-brand">one click</span>
+              Remove Backgrounds In Seconds
             </h1>
             <p className="mx-auto mt-5 max-w-2xl text-base text-muted-foreground sm:text-lg">
               Upload a photo and get a clean, transparent result in seconds. Perfect for product
               listings, social posts, thumbnails, and design work.
             </p>
-          </div>
-
-          <div id="upload" className="mx-auto mt-10 max-w-3xl">
-            <div className="rounded-3xl border border-border/60 bg-card/60 p-4 shadow-glow backdrop-blur sm:p-6">
-              <UploadWorkspace />
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                to="/remove-background"
+                className="inline-flex items-center rounded-xl bg-gradient-brand px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow"
+              >
+                Start Removing Backgrounds
+              </Link>
+              <Link
+                to="/pricing"
+                className="inline-flex items-center rounded-xl border border-border/70 px-6 py-3 text-sm font-semibold hover:bg-accent/10"
+              >
+                View Pricing
+              </Link>
             </div>
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              Free during beta — no sign-up needed. History stays in this browser for up to 7 days.
-            </p>
           </div>
         </div>
       </section>
@@ -140,17 +144,16 @@ function LandingPage() {
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
-            to="/"
-            hash="upload"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-brand px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow"
+            to="/remove-background"
+            className="inline-flex items-center rounded-xl bg-gradient-brand px-6 py-3 text-sm font-semibold text-primary-foreground shadow-glow"
           >
-            <ImageDown className="h-4 w-4" /> Remove a background
+            Start Removing Backgrounds
           </Link>
           <Link
             to="/pricing"
             className="inline-flex items-center rounded-xl border border-border/70 px-6 py-3 text-sm font-semibold hover:bg-accent/10"
           >
-            See pricing
+            View Pricing
           </Link>
         </div>
       </section>
