@@ -18,9 +18,13 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RefundRouteImport } from './routes/refund'
 import { Route as RemoveBackgroundRouteImport } from './routes/remove-background'
+import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiRazorpayOrderRouteImport } from './routes/api.razorpay-order'
+import { Route as ApiRazorpayVerifyRouteImport } from './routes/api.razorpay-verify'
 import { Route as ApiRemoveBackgroundRouteImport } from './routes/api.remove-background'
 
 const IndexRoute = IndexRouteImport.update({
@@ -68,9 +72,19 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefundRoute = RefundRouteImport.update({
+  id: '/refund',
+  path: '/refund',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RemoveBackgroundRoute = RemoveBackgroundRouteImport.update({
   id: '/remove-background',
   path: '/remove-background',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShippingRoute = ShippingRouteImport.update({
+  id: '/shipping',
+  path: '/shipping',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -82,6 +96,16 @@ const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRazorpayOrderRoute = ApiRazorpayOrderRouteImport.update({
+  id: '/razorpay-order',
+  path: '/razorpay-order',
+  getParentRoute: () => ApiRoute,
+} as any)
+const ApiRazorpayVerifyRoute = ApiRazorpayVerifyRouteImport.update({
+  id: '/razorpay-verify',
+  path: '/razorpay-verify',
+  getParentRoute: () => ApiRoute,
 } as any)
 const ApiRemoveBackgroundRoute = ApiRemoveBackgroundRouteImport.update({
   id: '/remove-background',
@@ -99,9 +123,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/refund': typeof RefundRoute
   '/remove-background': typeof RemoveBackgroundRoute
+  '/shipping': typeof ShippingRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/api/razorpay-order': typeof ApiRazorpayOrderRoute
+  '/api/razorpay-verify': typeof ApiRazorpayVerifyRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
 }
 export interface FileRoutesByTo {
@@ -114,9 +142,13 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/refund': typeof RefundRoute
   '/remove-background': typeof RemoveBackgroundRoute
+  '/shipping': typeof ShippingRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/api/razorpay-order': typeof ApiRazorpayOrderRoute
+  '/api/razorpay-verify': typeof ApiRazorpayVerifyRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
 }
 export interface FileRoutesById {
@@ -130,9 +162,13 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/refund': typeof RefundRoute
   '/remove-background': typeof RemoveBackgroundRoute
+  '/shipping': typeof ShippingRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/api/razorpay-order': typeof ApiRazorpayOrderRoute
+  '/api/razorpay-verify': typeof ApiRazorpayVerifyRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
 }
 export interface FileRouteTypes {
@@ -147,9 +183,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/privacy'
+    | '/refund'
     | '/remove-background'
+    | '/shipping'
     | '/signup'
     | '/terms'
+    | '/api/razorpay-order'
+    | '/api/razorpay-verify'
     | '/api/remove-background'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -162,9 +202,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/privacy'
+    | '/refund'
     | '/remove-background'
+    | '/shipping'
     | '/signup'
     | '/terms'
+    | '/api/razorpay-order'
+    | '/api/razorpay-verify'
     | '/api/remove-background'
   id:
     | '__root__'
@@ -177,9 +221,13 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/privacy'
+    | '/refund'
     | '/remove-background'
+    | '/shipping'
     | '/signup'
     | '/terms'
+    | '/api/razorpay-order'
+    | '/api/razorpay-verify'
     | '/api/remove-background'
   fileRoutesById: FileRoutesById
 }
@@ -193,7 +241,9 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  RefundRoute: typeof RefundRoute
   RemoveBackgroundRoute: typeof RemoveBackgroundRoute
+  ShippingRoute: typeof ShippingRoute
   SignupRoute: typeof SignupRoute
   TermsRoute: typeof TermsRoute
 }
@@ -263,11 +313,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/refund': {
+      id: '/refund'
+      path: '/refund'
+      fullPath: '/refund'
+      preLoaderRoute: typeof RefundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/remove-background': {
       id: '/remove-background'
       path: '/remove-background'
       fullPath: '/remove-background'
       preLoaderRoute: typeof RemoveBackgroundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shipping': {
+      id: '/shipping'
+      path: '/shipping'
+      fullPath: '/shipping'
+      preLoaderRoute: typeof ShippingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -284,6 +348,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/razorpay-order': {
+      id: '/api/razorpay-order'
+      path: '/razorpay-order'
+      fullPath: '/api/razorpay-order'
+      preLoaderRoute: typeof ApiRazorpayOrderRouteImport
+      parentRoute: typeof ApiRoute
+    }
+    '/api/razorpay-verify': {
+      id: '/api/razorpay-verify'
+      path: '/razorpay-verify'
+      fullPath: '/api/razorpay-verify'
+      preLoaderRoute: typeof ApiRazorpayVerifyRouteImport
+      parentRoute: typeof ApiRoute
+    }
     '/api/remove-background': {
       id: '/api/remove-background'
       path: '/remove-background'
@@ -295,10 +373,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface ApiRouteChildren {
+  ApiRazorpayOrderRoute: typeof ApiRazorpayOrderRoute
+  ApiRazorpayVerifyRoute: typeof ApiRazorpayVerifyRoute
   ApiRemoveBackgroundRoute: typeof ApiRemoveBackgroundRoute
 }
 
 const ApiRouteChildren: ApiRouteChildren = {
+  ApiRazorpayOrderRoute: ApiRazorpayOrderRoute,
+  ApiRazorpayVerifyRoute: ApiRazorpayVerifyRoute,
   ApiRemoveBackgroundRoute: ApiRemoveBackgroundRoute,
 }
 
@@ -314,7 +396,9 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  RefundRoute: RefundRoute,
   RemoveBackgroundRoute: RemoveBackgroundRoute,
+  ShippingRoute: ShippingRoute,
   SignupRoute: SignupRoute,
   TermsRoute: TermsRoute,
 }
