@@ -24,7 +24,7 @@ export const Route = createFileRoute("/api/razorpay-order")({
           }
 
           const keySecret = process.env.RAZORPAY_KEY_SECRET;
-          const keyId = process.env.RAZORPAY_KEY_ID ?? process.env.VITE_RAZORPAY_KEY_ID;
+          const keyId = process.env.RAZORPAY_KEY_ID;
 
           if (!keyId || !keySecret) {
             console.error("[razorpay-order] Missing Razorpay credentials");
@@ -43,6 +43,7 @@ export const Route = createFileRoute("/api/razorpay-order")({
               receipt: `${productId}_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`,
               notes: { productId },
             }),
+            signal: AbortSignal.timeout(15_000),
           });
 
           if (!razorpayResponse.ok) {
@@ -56,6 +57,14 @@ export const Route = createFileRoute("/api/razorpay-order")({
             amount: number;
             currency: string;
           };
+          if (
+            !orderData.id?.startsWith("order_") ||
+            orderData.amount !== product.amount ||
+            orderData.currency !== product.currency
+          ) {
+            console.error("[razorpay-order] Razorpay returned an invalid order");
+            return jsonError("Failed to create Razorpay order", 502);
+          }
           const checkoutToken = createCheckoutToken(
             {
               orderId: orderData.id,

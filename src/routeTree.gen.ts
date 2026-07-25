@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as ApiRouteImport } from './routes/api'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as FeaturesRouteImport } from './routes/features'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as LoginRouteImport } from './routes/login'
@@ -23,6 +24,7 @@ import { Route as RemoveBackgroundRouteImport } from './routes/remove-background
 import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ApiEntitlementRouteImport } from './routes/api.entitlement'
 import { Route as ApiRazorpayOrderRouteImport } from './routes/api.razorpay-order'
 import { Route as ApiRazorpayVerifyRouteImport } from './routes/api.razorpay-verify'
 import { Route as ApiRemoveBackgroundRouteImport } from './routes/api.remove-background'
@@ -45,6 +47,11 @@ const ApiRoute = ApiRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesRoute = FeaturesRouteImport.update({
@@ -97,6 +104,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEntitlementRoute = ApiEntitlementRouteImport.update({
+  id: '/entitlement',
+  path: '/entitlement',
+  getParentRoute: () => ApiRoute,
+} as any)
 const ApiRazorpayOrderRoute = ApiRazorpayOrderRouteImport.update({
   id: '/razorpay-order',
   path: '/razorpay-order',
@@ -118,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/api': typeof ApiRouteWithChildren
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
@@ -128,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/shipping': typeof ShippingRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/api/entitlement': typeof ApiEntitlementRoute
   '/api/razorpay-order': typeof ApiRazorpayOrderRoute
   '/api/razorpay-verify': typeof ApiRazorpayVerifyRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
@@ -137,6 +151,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/api': typeof ApiRouteWithChildren
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
@@ -147,6 +162,7 @@ export interface FileRoutesByTo {
   '/shipping': typeof ShippingRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/api/entitlement': typeof ApiEntitlementRoute
   '/api/razorpay-order': typeof ApiRazorpayOrderRoute
   '/api/razorpay-verify': typeof ApiRazorpayVerifyRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
@@ -157,6 +173,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/api': typeof ApiRouteWithChildren
   '/contact': typeof ContactRoute
+  '/dashboard': typeof DashboardRoute
   '/features': typeof FeaturesRoute
   '/history': typeof HistoryRoute
   '/login': typeof LoginRoute
@@ -167,6 +184,7 @@ export interface FileRoutesById {
   '/shipping': typeof ShippingRoute
   '/signup': typeof SignupRoute
   '/terms': typeof TermsRoute
+  '/api/entitlement': typeof ApiEntitlementRoute
   '/api/razorpay-order': typeof ApiRazorpayOrderRoute
   '/api/razorpay-verify': typeof ApiRazorpayVerifyRoute
   '/api/remove-background': typeof ApiRemoveBackgroundRoute
@@ -178,6 +196,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/api'
     | '/contact'
+    | '/dashboard'
     | '/features'
     | '/history'
     | '/login'
@@ -188,6 +207,7 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/signup'
     | '/terms'
+    | '/api/entitlement'
     | '/api/razorpay-order'
     | '/api/razorpay-verify'
     | '/api/remove-background'
@@ -197,6 +217,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/api'
     | '/contact'
+    | '/dashboard'
     | '/features'
     | '/history'
     | '/login'
@@ -207,6 +228,7 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/signup'
     | '/terms'
+    | '/api/entitlement'
     | '/api/razorpay-order'
     | '/api/razorpay-verify'
     | '/api/remove-background'
@@ -216,6 +238,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/api'
     | '/contact'
+    | '/dashboard'
     | '/features'
     | '/history'
     | '/login'
@@ -226,6 +249,7 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/signup'
     | '/terms'
+    | '/api/entitlement'
     | '/api/razorpay-order'
     | '/api/razorpay-verify'
     | '/api/remove-background'
@@ -236,6 +260,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   ApiRoute: typeof ApiRouteWithChildren
   ContactRoute: typeof ContactRoute
+  DashboardRoute: typeof DashboardRoute
   FeaturesRoute: typeof FeaturesRoute
   HistoryRoute: typeof HistoryRoute
   LoginRoute: typeof LoginRoute
@@ -276,6 +301,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/features': {
@@ -348,6 +380,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/entitlement': {
+      id: '/api/entitlement'
+      path: '/entitlement'
+      fullPath: '/api/entitlement'
+      preLoaderRoute: typeof ApiEntitlementRouteImport
+      parentRoute: typeof ApiRoute
+    }
     '/api/razorpay-order': {
       id: '/api/razorpay-order'
       path: '/razorpay-order'
@@ -373,12 +412,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface ApiRouteChildren {
+  ApiEntitlementRoute: typeof ApiEntitlementRoute
   ApiRazorpayOrderRoute: typeof ApiRazorpayOrderRoute
   ApiRazorpayVerifyRoute: typeof ApiRazorpayVerifyRoute
   ApiRemoveBackgroundRoute: typeof ApiRemoveBackgroundRoute
 }
 
 const ApiRouteChildren: ApiRouteChildren = {
+  ApiEntitlementRoute: ApiEntitlementRoute,
   ApiRazorpayOrderRoute: ApiRazorpayOrderRoute,
   ApiRazorpayVerifyRoute: ApiRazorpayVerifyRoute,
   ApiRemoveBackgroundRoute: ApiRemoveBackgroundRoute,
@@ -391,6 +432,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   ApiRoute: ApiRouteWithChildren,
   ContactRoute: ContactRoute,
+  DashboardRoute: DashboardRoute,
   FeaturesRoute: FeaturesRoute,
   HistoryRoute: HistoryRoute,
   LoginRoute: LoginRoute,

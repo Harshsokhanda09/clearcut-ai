@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/razorpay-verify")({
         }
 
         const keySecret = process.env.RAZORPAY_KEY_SECRET;
-        const keyId = process.env.RAZORPAY_KEY_ID ?? process.env.VITE_RAZORPAY_KEY_ID;
+        const keyId = process.env.RAZORPAY_KEY_ID;
 
         if (!keySecret || !keyId) {
           console.error("[razorpay-verify] RAZORPAY_KEY_SECRET not configured");
@@ -74,10 +74,12 @@ export const Route = createFileRoute("/api/razorpay-verify")({
               `https://api.razorpay.com/v1/payments/${encodeURIComponent(razorpay_payment_id)}`,
               {
                 headers: { Authorization: authorization },
+                signal: AbortSignal.timeout(15_000),
               },
             ),
             fetch(`https://api.razorpay.com/v1/orders/${encodeURIComponent(razorpay_order_id)}`, {
               headers: { Authorization: authorization },
+              signal: AbortSignal.timeout(15_000),
             }),
           ]);
           if (!paymentResponse.ok || !orderResponse.ok) {
@@ -135,7 +137,7 @@ export const Route = createFileRoute("/api/razorpay-verify")({
           );
         } catch (error) {
           console.error("[razorpay-verify] Verification error:", error);
-          return jsonError(error instanceof Error ? error.message : "Verification failed", 500);
+          return jsonError("Payment verification could not be completed", 500);
         }
       },
     },

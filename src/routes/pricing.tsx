@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { SiteLayout } from "@/components/site-layout";
 import { Check } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -111,6 +111,7 @@ interface RazorpayOptions {
   notes?: Record<string, string>;
   theme?: {
     color?: string;
+    backdrop_color?: string;
   };
   modal?: {
     ondismiss?: () => void;
@@ -120,7 +121,23 @@ interface RazorpayOptions {
   redirect?: boolean;
   retry?: {
     enabled: boolean;
-    max_count: number;
+  };
+  config?: {
+    display: {
+      blocks: {
+        preferred: {
+          name: string;
+          instruments: Array<{
+            method: "upi";
+            flows: Array<"qr" | "intent">;
+          }>;
+        };
+      };
+      sequence: string[];
+      preferences: {
+        show_default_blocks: boolean;
+      };
+    };
   };
 }
 
@@ -153,6 +170,34 @@ interface RazorpayVerifyResponse {
 }
 
 const RAZORPAY_SCRIPT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+let razorpayLogoPromise: Promise<string> | null = null;
+
+function getRazorpayLogo(): Promise<string> {
+  if (razorpayLogoPromise) return razorpayLogoPromise;
+  razorpayLogoPromise = new Promise((resolve) => {
+    const absoluteLogoUrl = new URL("/LOGO.png", window.location.origin).href;
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          resolve(absoluteLogoUrl);
+          return;
+        }
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/png"));
+      } catch {
+        resolve(absoluteLogoUrl);
+      }
+    };
+    image.onerror = () => resolve(absoluteLogoUrl);
+    image.src = absoluteLogoUrl;
+  });
+  return razorpayLogoPromise;
+}
 
 function loadRazorpayScript(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -223,6 +268,7 @@ async function verifyRazorpayPayment(
 }
 
 function PricingPage() {
+  const navigate = useNavigate();
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [successTier, setSuccessTier] = useState<string | null>(null);
@@ -355,6 +401,14 @@ function PricingPage() {
         const orderData = await createRazorpayOrder(tier.productId);
         if (paymentAttempt !== paymentAttemptRef.current) return;
         orderCreated = true;
+        const checkoutLogo = await getRazorpayLogo();
+        if (paymentAttempt !== paymentAttemptRef.current) return;
+        const isMobileViewport = window.matchMedia("(max-width: 767px)").matches;
+        const isTestMode = orderData.keyId.startsWith("rzp_test_");
+        // Test Checkout cannot launch or complete a genuine UPI app intent.
+        // Keep QR available there (including in device emulation), then switch
+        // to installed UPI apps only on real mobile devices with live keys.
+        const useMobileUpiIntent = isMobileViewport && !isTestMode;
 
         let verificationPromise: Promise<RazorpayVerifyResponse> | null = null;
         let dismissTriggered = false;
@@ -374,7 +428,9 @@ function PricingPage() {
           currency: orderData.currency,
           name: "ClearCut AI",
           description: tier.name === "Pro" ? "Pro Subscription" : "Credit Pack",
-          image: "/LOGO.png",
+          // A compact data URL remains valid on Razorpay's hosted bank pages;
+          // a relative URL resolves against Razorpay and displays as broken.
+          image: checkoutLogo,
           order_id: orderData.id,
           prefill: {
             name: "",
@@ -385,7 +441,8 @@ function PricingPage() {
             product: tier.productId,
           },
           theme: {
-            color: "#3399cc",
+            color: "#06b6d4",
+            backdrop_color: "#020617",
           },
           modal: {
             ondismiss: handleDismiss,
@@ -405,6 +462,7 @@ function PricingPage() {
                     ? "Pro plan activated successfully!"
                     : "Credits added successfully!",
                 );
+                await navigate({ to: "/dashboard" });
               } else {
                 toast.error(result.message || "Payment verification failed. Contact support.");
               }
@@ -420,7 +478,28 @@ function PricingPage() {
           redirect: false,
           retry: {
             enabled: true,
-            max_count: 2,
+          },
+          // Razorpay automatically resolves this UPI entry to Dynamic QR on
+          // eligible desktop browsers and installed UPI apps on real phones.
+          // Keeping default blocks visible preserves cards, wallets, etc.
+          config: {
+            display: {
+              blocks: {
+                preferred: {
+                  name: useMobileUpiIntent ? "Pay with UPI Apps" : "UPI QR",
+                  instruments: [
+                    {
+                      method: "upi",
+                      flows: [useMobileUpiIntent ? "intent" : "qr"],
+                    },
+                  ],
+                },
+              },
+              sequence: ["block.preferred"],
+              preferences: {
+                show_default_blocks: true,
+              },
+            },
           },
         };
 
@@ -515,7 +594,7 @@ function PricingPage() {
         }, 4000);
       }
     },
-    [clearCheckoutWatchdog, closeCheckoutAndReset, razorpayLoaded, resetPaymentState],
+    [clearCheckoutWatchdog, closeCheckoutAndReset, navigate, razorpayLoaded, resetPaymentState],
   );
 
   const getButtonText = (tier: Tier) => {

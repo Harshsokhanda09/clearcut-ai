@@ -25,6 +25,13 @@ export interface CheckoutTokenPayload {
   expiresAt: number;
 }
 
+interface EntitlementTokenPayload {
+  version: 1;
+  productId: ProductId;
+  paymentId: string;
+  expiresAt: number;
+}
+
 function encode(value: string): string {
   return Buffer.from(value, "utf8").toString("base64url");
 }
@@ -93,16 +100,15 @@ export function createEntitlementCookie(
 ): string {
   const maxAge = productId === "pro" ? 30 * 24 * 60 * 60 : 365 * 24 * 60 * 60;
   const expiresAt = Date.now() + maxAge * 1000;
-  const value = createCheckoutToken(
-    {
-      orderId: paymentId.replace(/^pay_/, "order_entitlement_"),
+  const encodedPayload = encode(
+    JSON.stringify({
+      version: 1,
       productId,
-      amount: PRODUCTS[productId].amount,
-      currency: PRODUCTS[productId].currency,
+      paymentId,
       expiresAt,
-    },
-    secret,
+    } satisfies EntitlementTokenPayload),
   );
+  const value = `${encodedPayload}.${sign(encodedPayload, secret)}`;
   return [
     `clearcut_${productId}_entitlement=${value}`,
     "Path=/",
@@ -113,4 +119,40 @@ export function createEntitlementCookie(
   ]
     .filter(Boolean)
     .join("; ");
+}
+
+export function readEntitlementCookie(
+  cookieHeader: string | null,
+  secret: string,
+): EntitlementTokenPayload | null {
+  if (!cookieHeader) return null;
+  for (const productId of Object.keys(PRODUCTS) as ProductId[]) {
+    const name = `clearcut_${productId}_entitlement=`;
+    const value = cookieHeader
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(name))
+      ?.slice(name.length);
+    if (!value) continue;
+    const [encodedPayload, receivedSignature, extra] = value.split(".");
+    if (!encodedPayload || !receivedSignature || extra) continue;
+    if (!safeEqual(receivedSignature, sign(encodedPayload, secret))) continue;
+    try {
+      const payload = JSON.parse(
+        Buffer.from(encodedPayload, "base64url").toString("utf8"),
+      ) as EntitlementTokenPayload;
+      if (
+        payload.version === 1 &&
+        payload.productId === productId &&
+        payload.paymentId.startsWith("pay_") &&
+        Number.isFinite(payload.expiresAt) &&
+        payload.expiresAt > Date.now()
+      ) {
+        return payload;
+      }
+    } catch {
+      // Ignore malformed cookies and continue checking other entitlements.
+    }
+  }
+  return null;
 }
