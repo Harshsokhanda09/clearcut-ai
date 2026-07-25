@@ -123,3 +123,15 @@
       -10px 0;
   }
 }
+
+/*
+ * Razorpay inserts this container directly under <body>, outside React.
+ * Keep Standard Checkout modal over the ClearCut page even if Checkout's
+ * injected backdrop style is delayed or removed during responsive reflow.
+ * Do not style the cross-origin iframe contents (QR, timer, payment fields).
+ */
+body > .razorpay-container {
+  background: rgb(2 6 23 / 78%) !important;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
