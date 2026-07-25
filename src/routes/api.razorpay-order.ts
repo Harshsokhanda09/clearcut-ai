@@ -1,4 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  createCheckoutToken,
+  PRODUCTS,
+  razorpayAuthorization,
+  type ProductId,
+} from "@/lib/razorpay.server";
 
 function jsonError(message: string, status: number): Response {
   return Response.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
@@ -9,7 +15,13 @@ export const Route = createFileRoute("/api/razorpay-order")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const { amount } = await request.json();
+          const body = (await request.json()) as { productId?: string };
+          const productId = body.productId as ProductId;
+          const product = PRODUCTS[productId];
+
+          if (!product) {
+            return jsonError("Unknown product", 400);
+          }
 
           const keySecret = process.env.RAZORPAY_KEY_SECRET;
           const keyId = process.env.RAZORPAY_KEY_ID ?? process.env.VITE_RAZORPAY_KEY_ID;
@@ -19,19 +31,17 @@ export const Route = createFileRoute("/api/razorpay-order")({
             return jsonError("Razorpay credentials not configured", 500);
           }
 
-          console.log("[razorpay-order] Creating Razorpay order with amount:", amount);
-
-          // Call Razorpay's Orders API
           const razorpayResponse = await fetch("https://api.razorpay.com/v1/orders", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Basic ${btoa(`${keyId}:${keySecret}`)}`,
+              Authorization: razorpayAuthorization(keyId, keySecret),
             },
             body: JSON.stringify({
-              amount: amount,
-              currency: "INR",
-              receipt: `receipt_${Date.now()}`,
+              amount: product.amount,
+              currency: product.currency,
+              receipt: `${productId}_${crypto.randomUUID().replaceAll("-", "").slice(0, 24)}`,
+              notes: { productId },
             }),
           });
 
@@ -41,12 +51,34 @@ export const Route = createFileRoute("/api/razorpay-order")({
             return jsonError("Failed to create Razorpay order", 500);
           }
 
-          const orderData = await razorpayResponse.json();
-          console.log("[razorpay-order] Razorpay order created successfully:", orderData.id);
+          const orderData = (await razorpayResponse.json()) as {
+            id: string;
+            amount: number;
+            currency: string;
+          };
+          const checkoutToken = createCheckoutToken(
+            {
+              orderId: orderData.id,
+              productId,
+              amount: product.amount,
+              currency: product.currency,
+              expiresAt: Date.now() + 30 * 60 * 1000,
+            },
+            keySecret,
+          );
 
-          return Response.json(orderData, {
-            headers: { "Cache-Control": "no-store" },
-          });
+          return Response.json(
+            {
+              id: orderData.id,
+              amount: orderData.amount,
+              currency: orderData.currency,
+              keyId,
+              checkoutToken,
+            },
+            {
+              headers: { "Cache-Control": "no-store" },
+            },
+          );
         } catch (error) {
           console.error("[razorpay-order] Error creating order:", error);
           return jsonError("Failed to create order", 500);

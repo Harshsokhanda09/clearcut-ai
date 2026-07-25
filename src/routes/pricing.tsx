@@ -29,6 +29,7 @@ interface BaseTier {
 
 interface PaidTier extends BaseTier {
   amount: number;
+  productId: "pro" | "credits";
 }
 
 type Tier = BaseTier | PaidTier;
@@ -56,6 +57,7 @@ const TIERS: Tier[] = [
     name: "Pro",
     price: "₹499",
     amount: 49900,
+    productId: "pro",
     cadence: "per month",
     highlight: true,
     features: [
@@ -72,6 +74,7 @@ const TIERS: Tier[] = [
     name: "Credit pack",
     price: "₹999",
     amount: 99900,
+    productId: "credits",
     cadence: "one-time",
     highlight: false,
     features: [
@@ -114,10 +117,16 @@ interface RazorpayOptions {
     escape?: boolean;
     backdropclose?: boolean;
   };
+  redirect?: boolean;
+  retry?: {
+    enabled: boolean;
+    max_count: number;
+  };
 }
 
 interface RazorpayInstance {
   open: () => void;
+  close: () => void;
   on: (event: string, handler: (response: unknown) => void) => void;
 }
 
@@ -133,11 +142,14 @@ interface RazorpayOrderResponse {
   currency: string;
   receipt?: string;
   status?: string;
+  keyId: string;
+  checkoutToken: string;
 }
 
 interface RazorpayVerifyResponse {
   success: boolean;
   message?: string;
+  entitlement?: "pro" | "credits";
 }
 
 const RAZORPAY_SCRIPT_SRC = "https://checkout.razorpay.com/v1/checkout.js";
@@ -173,11 +185,14 @@ function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
-async function createRazorpayOrder(amount: number): Promise<RazorpayOrderResponse> {
+async function createRazorpayOrder(
+  productId: PaidTier["productId"],
+): Promise<RazorpayOrderResponse> {
   const response = await fetch("/api/razorpay-order", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ productId }),
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {
@@ -190,11 +205,13 @@ async function createRazorpayOrder(amount: number): Promise<RazorpayOrderRespons
 
 async function verifyRazorpayPayment(
   payload: RazorpaySuccessResponse,
+  checkoutToken: string,
 ): Promise<RazorpayVerifyResponse> {
   const response = await fetch("/api/razorpay-verify", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({ ...payload, checkoutToken }),
+    signal: AbortSignal.timeout(20_000),
   });
 
   if (!response.ok) {
@@ -211,12 +228,43 @@ function PricingPage() {
   const [successTier, setSuccessTier] = useState<string | null>(null);
   const razorpayInstanceRef = useRef<RazorpayInstance | null>(null);
   const paymentInProgressRef = useRef(false);
+  const paymentAttemptRef = useRef(0);
+  const checkoutWatchdogRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearCheckoutWatchdog = useCallback(() => {
+    if (checkoutWatchdogRef.current) {
+      clearInterval(checkoutWatchdogRef.current);
+      checkoutWatchdogRef.current = null;
+    }
+  }, []);
 
   const resetPaymentState = useCallback(() => {
-    setLoadingTier(null);
+    clearCheckoutWatchdog();
+    paymentAttemptRef.current += 1;
+    const checkout = razorpayInstanceRef.current;
     razorpayInstanceRef.current = null;
     paymentInProgressRef.current = false;
-  }, []);
+    setLoadingTier(null);
+    try {
+      checkout?.close();
+    } catch {
+      // Checkout may already be closed or may have failed before its iframe loaded.
+    }
+  }, [clearCheckoutWatchdog]);
+
+  const closeCheckoutAndReset = useCallback(() => {
+    clearCheckoutWatchdog();
+    paymentAttemptRef.current += 1;
+    const checkout = razorpayInstanceRef.current;
+    razorpayInstanceRef.current = null;
+    paymentInProgressRef.current = false;
+    setLoadingTier(null);
+    try {
+      checkout?.close();
+    } catch {
+      // Checkout may already be closed.
+    }
+  }, [clearCheckoutWatchdog]);
 
   // Load Razorpay script on mount
   useEffect(() => {
@@ -253,13 +301,11 @@ function PricingPage() {
   // Reset state on browser back / forward / pageshow (navigation restoration)
   useEffect(() => {
     const handlePopState = () => {
-      resetPaymentState();
+      closeCheckoutAndReset();
     };
 
-    const handlePageShow = (e: PageTransitionEvent) => {
-      if (e.persisted) {
-        resetPaymentState();
-      }
+    const handlePageShow = () => {
+      closeCheckoutAndReset();
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -269,15 +315,17 @@ function PricingPage() {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("pageshow", handlePageShow);
     };
-  }, [resetPaymentState]);
+  }, [closeCheckoutAndReset]);
 
   // Cleanup Razorpay and state on component unmount
   useEffect(() => {
     return () => {
+      clearCheckoutWatchdog();
+      paymentAttemptRef.current += 1;
       razorpayInstanceRef.current = null;
       paymentInProgressRef.current = false;
     };
-  }, []);
+  }, [clearCheckoutWatchdog]);
 
   const openRazorpayCheckout = useCallback(
     async (tier: Tier) => {
@@ -296,20 +344,16 @@ function PricingPage() {
         return;
       }
 
-      const keyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
-      if (!keyId || !keyId.startsWith("rzp_")) {
-        toast.error("Payment gateway not configured. Contact support.");
-        return;
-      }
-
       paymentInProgressRef.current = true;
+      const paymentAttempt = ++paymentAttemptRef.current;
       setLoadingTier(tier.name);
       setSuccessTier(null);
 
       let orderCreated = false;
 
       try {
-        const orderData = await createRazorpayOrder(tier.amount);
+        const orderData = await createRazorpayOrder(tier.productId);
+        if (paymentAttempt !== paymentAttemptRef.current) return;
         orderCreated = true;
 
         let verificationPromise: Promise<RazorpayVerifyResponse> | null = null;
@@ -325,9 +369,9 @@ function PricingPage() {
         };
 
         const options: RazorpayOptions = {
-          key: keyId,
-          amount: tier.amount,
-          currency: "INR",
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: orderData.currency,
           name: "ClearCut AI",
           description: tier.name === "Pro" ? "Pro Subscription" : "Credit Pack",
           image: "/LOGO.png",
@@ -338,7 +382,7 @@ function PricingPage() {
             contact: "",
           },
           notes: {
-            plan: tier.name,
+            product: tier.productId,
           },
           theme: {
             color: "#3399cc",
@@ -350,10 +394,11 @@ function PricingPage() {
           },
           handler: async (response: RazorpaySuccessResponse) => {
             try {
-              verificationPromise = verifyRazorpayPayment(response);
+              setLoadingTier(tier.name);
+              verificationPromise = verifyRazorpayPayment(response, orderData.checkoutToken);
               const result = await verificationPromise;
 
-              if (result.success) {
+              if (result.success && result.entitlement === tier.productId) {
                 setSuccessTier(tier.name);
                 toast.success(
                   tier.name === "Pro"
@@ -372,6 +417,11 @@ function PricingPage() {
               resetPaymentState();
             }
           },
+          redirect: false,
+          retry: {
+            enabled: true,
+            max_count: 2,
+          },
         };
 
         const razorpay = new window.Razorpay(options);
@@ -386,12 +436,65 @@ function PricingPage() {
             failResp?.error?.reason ||
             "Payment failed. Please try again.";
           toast.error(reason);
-          resetPaymentState();
+          closeCheckoutAndReset();
         });
 
         razorpayInstanceRef.current = razorpay;
-        setLoadingTier(null);
-        razorpay.open();
+        // Checkout currently reports this particular startup failure only via
+        // window.alert, with no Razorpay event. Intercept just the synchronous
+        // open call so we can release the UI lock as soon as that alert closes.
+        const originalAlert = window.alert;
+        let unsupportedBrowserAlert = false;
+        window.alert = (message?: unknown) => {
+          unsupportedBrowserAlert =
+            unsupportedBrowserAlert ||
+            (typeof message === "string" &&
+              message.toLowerCase().includes("browser is not supported"));
+          originalAlert.call(window, message);
+        };
+        try {
+          razorpay.open();
+        } finally {
+          window.alert = originalAlert;
+        }
+
+        if (unsupportedBrowserAlert) {
+          toast.error(
+            "Razorpay Checkout is blocked in this browser. Enable third-party cookies or try an updated browser.",
+          );
+          closeCheckoutAndReset();
+          return;
+        }
+
+        // Razorpay's unsupported-browser path uses a native alert and does not
+        // emit payment.failed or modal.ondismiss. Watch the modal container so
+        // that path, a failed iframe render, and an unreported close all unlock
+        // the button without allowing another order while Checkout is visible.
+        const checkoutOpenedAt = Date.now();
+        let checkoutWasVisible = false;
+        checkoutWatchdogRef.current = setInterval(() => {
+          if (paymentAttempt !== paymentAttemptRef.current) {
+            clearCheckoutWatchdog();
+            return;
+          }
+
+          const checkoutIsVisible = Boolean(
+            document.querySelector(".razorpay-container, .razorpay-checkout-frame"),
+          );
+          checkoutWasVisible ||= checkoutIsVisible;
+
+          if (checkoutWasVisible && !checkoutIsVisible) {
+            resetPaymentState();
+            return;
+          }
+
+          if (!checkoutWasVisible && Date.now() - checkoutOpenedAt > 8_000) {
+            toast.error(
+              "Razorpay Checkout could not open in this browser. Please enable third-party cookies or try an updated browser.",
+            );
+            closeCheckoutAndReset();
+          }
+        }, 500);
       } catch (error) {
         console.error("[pricing] Payment flow error:", error);
         toast.error(
@@ -412,7 +515,7 @@ function PricingPage() {
         }, 4000);
       }
     },
-    [razorpayLoaded, resetPaymentState],
+    [clearCheckoutWatchdog, closeCheckoutAndReset, razorpayLoaded, resetPaymentState],
   );
 
   const getButtonText = (tier: Tier) => {
@@ -431,11 +534,7 @@ function PricingPage() {
   };
 
   const isButtonDisabled = (tier: Tier) => {
-    if (successTier === tier.name) return true;
-    if (loadingTier === tier.name) return true;
-    if (razorpayInstanceRef.current && loadingTier === tier.name) return true;
-    if (paymentInProgressRef.current && loadingTier === tier.name) return true;
-    return false;
+    return paymentInProgressRef.current || loadingTier === tier.name;
   };
 
   return (
